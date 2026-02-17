@@ -1,24 +1,44 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Pong LAN With ESP8266</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<title>Pong ESP8266</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <h1>Pong in LAN With ESP8266</h1>
 
-  <div id="modeSelect">
-    <button onclick="setMode('local')">Local</button>
-    <button onclick="setMode('lan')">LAN</button>
-  </div>
+<h1>Pong ESP8266</h1>
 
-  <canvas id="pongCanvas" width="320" height="240"></canvas>
+<label class="switch">
+  <input type="checkbox" id="modeToggle" onchange="toggleMode()">
+  <span class="slider"></span>
+</label>
+<p id="modeText">Mode: LOCAL</p>
 
-  <p>Left: W/S | Right: ↑/↓</p>
-  <p id="playerInfo"></p>
+<div>
+<label>Points to Win:</label>
+<select id="maxScore">
+<option value="5">5</option>
+<option value="10" selected>10</option>
+<option value="15">15</option>
+<option value="20">20</option>
+<option value="25">25</option>
+</select>
+<button onclick="startGame()">START</button>
+<button onclick="finishGame()">FINISH</button>
+</div>
 
-  <script src="js/script.js"></script>
+<canvas id="pongCanvas" width="320" height="240"></canvas>
+
+<div id="popup" class="hidden">
+<p id="winnerText"></p>
+<button onclick="closePopup()">Close</button>
+</div>
+
+<p>Left: W/S | Right: ↑/↓</p>
+<p id="playerInfo"></p>
+
+<script src="js/script.js"></script>
 </body>
 </html>

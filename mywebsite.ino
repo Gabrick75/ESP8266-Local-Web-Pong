@@ -17,6 +17,9 @@ struct GameState {
   int8_t vY = 2;
   uint8_t lScore = 0;
   uint8_t rScore = 0;
+  uint8_t maxScore = 10;
+  bool running = false;
+  String winner = "";
   String player1IP = "";
   String player2IP = "";
 };
@@ -30,7 +33,18 @@ void resetBall() {
   g.vX *= -1;
 }
 
+void resetGame() {
+  g.lScore = 0;
+  g.rScore = 0;
+  g.lY = 100;
+  g.rY = 100;
+  g.winner = "";
+  resetBall();
+}
+
 void updateGame() {
+  if (!g.running) return;
+
   g.bX += g.vX;
   g.bY += g.vY;
 
@@ -41,18 +55,15 @@ void updateGame() {
 
   if (g.bX < 0) { g.rScore++; resetBall(); }
   if (g.bX > 320) { g.lScore++; resetBall(); }
+
+  if (g.lScore >= g.maxScore) { g.winner="Player 1"; g.running=false; }
+  if (g.rScore >= g.maxScore) { g.winner="Player 2"; g.running=false; }
 }
 
 void registerPlayer() {
   String ip = server.client().remoteIP().toString();
-
-  if (g.player1IP == "") {
-    g.player1IP = ip;
-    Serial.println("Player 1 connected: " + ip);
-  } else if (g.player2IP == "" && ip != g.player1IP) {
-    g.player2IP = ip;
-    Serial.println("Player 2 connected: " + ip);
-  }
+  if (g.player1IP == "") g.player1IP = ip;
+  else if (g.player2IP == "" && ip != g.player1IP) g.player2IP = ip;
 }
 
 void setup() {
@@ -60,7 +71,6 @@ void setup() {
   WiFi.begin("YOUR-SSID", "YOUR-PASSWORD");
   while (WiFi.status() != WL_CONNECTED) delay(500);
 
-  Serial.print("ESP IP: ");
   Serial.println(WiFi.localIP());
 
   LittleFS.begin();
@@ -72,28 +82,46 @@ void setup() {
   server.on("/state.json", []() {
     registerPlayer();
 
-    char json[256];
+    char json[512];
     snprintf(json, sizeof(json),
-             "{\"lY\":%d,\"rY\":%d,\"bX\":%d,\"bY\":%d,\"lS\":%d,\"rS\":%d,\"p1\":\"%s\",\"p2\":\"%s\"}",
-             g.lY, g.rY, g.bX, g.bY, g.lScore, g.rScore,
-             g.player1IP.c_str(), g.player2IP.c_str());
+      "{\"lY\":%d,\"rY\":%d,\"bX\":%d,\"bY\":%d,\"lS\":%d,\"rS\":%d,\"max\":%d,\"run\":%d,\"winner\":\"%s\",\"p1\":\"%s\",\"p2\":\"%s\"}",
+      g.lY,g.rY,g.bX,g.bY,g.lScore,g.rScore,g.maxScore,g.running,
+      g.winner.c_str(),g.player1IP.c_str(),g.player2IP.c_str());
 
-    server.send(200, "application/json", json);
+    server.send(200,"application/json",json);
   });
 
   server.on("/input", []() {
+    if (!g.running) { server.send(200,"text/plain","stopped"); return; }
+
     String ip = server.client().remoteIP().toString();
 
-    if (server.hasArg("d")) {
+    if (server.hasArg("p")) {
+      // LOCAL MODE (explicit player)
+      int p = server.arg("p").toInt();
       int d = server.arg("d").toInt();
-
-      if (ip == g.player1IP) {
-        g.lY = constrain(g.lY + d, 0, 200);
-      } else if (ip == g.player2IP) {
-        g.rY = constrain(g.rY + d, 0, 200);
-      }
+      if (p == 1) g.lY = constrain(g.lY + d, 0, 200);
+      if (p == 2) g.rY = constrain(g.rY + d, 0, 200);
+    } else {
+      // LAN MODE (IP based)
+      int d = server.arg("d").toInt();
+      if (ip == g.player1IP) g.lY = constrain(g.lY + d, 0, 200);
+      if (ip == g.player2IP) g.rY = constrain(g.rY + d, 0, 200);
     }
-    server.send(200, "text/plain", "ok");
+
+    server.send(200,"text/plain","ok");
+  });
+
+  server.on("/start", []() {
+    if (server.hasArg("max")) g.maxScore = server.arg("max").toInt();
+    resetGame();
+    g.running = true;
+    server.send(200,"text/plain","started");
+  });
+
+  server.on("/finish", []() {
+    g.running = false;
+    server.send(200,"text/plain","finished");
   });
 
   server.begin();
@@ -101,7 +129,6 @@ void setup() {
 
 void loop() {
   server.handleClient();
-
   unsigned long now = millis();
   if (now - lastFrame >= FRAME_TIME) {
     lastFrame = now;
