@@ -1,30 +1,24 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Pong for ESP8266</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <title>Pong LAN With ESP8266</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <h1>Advanced Pong</h1>
-    <div id="container">
-        <canvas id="pongCanvas"></canvas>
-        <div id="menu">
-            <label for="maxScore">Points to Win:</label>
-            <select id="maxScore">
-                <option value="5">5</option>
-                <option value="10" selected>10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
-            </select>
-            <button id="resetBtn">Reset Game</button>
-        </div>
-    </div>
-    <div id="winnerPopup" class="hidden">
-        <p id="winnerText"></p>
-        <button id="closePopup">Close</button>
-    </div>
-    <p>Left: W/S | Right: ↑/↓</p>
-    <script src="js/script.js"></script>
+  <h1>Pong in LAN With ESP8266</h1>
+
+  <div id="modeSelect">
+    <button onclick="setMode('local')">Local</button>
+    <button onclick="setMode('lan')">LAN</button>
+  </div>
+
+  <canvas id="pongCanvas" width="320" height="240"></canvas>
+
+  <p>Left: W/S | Right: ↑/↓</p>
+  <p id="playerInfo"></p>
+
+  <script src="js/script.js"></script>
 </body>
 </html>
