@@ -1,0 +1,203 @@
+Pong LAN on ESP8266 – Documentation
+Project Overview
+
+This project allows you to host a multiplayer Pong game on a single ESP8266 board using LittleFS for file storage and AJAX polling to synchronize two players on the same network.
+
+Key features:
+
+Two-player Pong game playable from different devices connected to the same ESP8266.
+
+Synchronization of game state (paddles, ball, scores) via AJAX polling.
+
+Dynamic colors for paddles and ball.
+
+Configurable points to win with a menu.
+
+Buzzer sound when the ball hits paddles or scores.
+
+Display of player IPs for each connected client.
+
+Pop-up message when a player wins.
+
+🔹 Hardware Requirements
+
+1 × ESP8266 board (e.g., Wemos D1 mini / LOLIN D1 R2)
+
+Wi-Fi network for multiplayer devices
+
+USB cable to program the ESP8266
+
+🔹 Software Requirements
+
+Arduino IDE ≥ 1.8.19
+
+ESP8266 board support installed
+
+LittleFS plugin installed for file upload
+
+Files stored in data/ folder: index.html, css/style.css, js/script.js
+
+🔹 File Structure
+data/
+ ├── index.html        → Main game HTML
+ ├── css/
+ │    └── style.css    → Game styling
+ └── js/
+      └── script.js    → Game logic and AJAX polling
+
+🔹 Code Overview
+1. ESP8266 Sketch (C++)
+
+Wi-Fi connection: ESP8266 connects to the network and prints its IP in Serial Monitor.
+
+LittleFS: Serves static files (index.html, CSS, JS).
+
+HTTP routes:
+
+/ → serves index.html.
+
+/state.json → returns the current game state (paddles, ball, scores, winner, player IPs).
+
+/move?key= → receives paddle movement from players (w, s, up, down).
+
+/start?maxScore= → starts a new game with selected points to win.
+
+/reset → resets the game.
+
+Game state:
+The GameState struct tracks:
+
+Paddle positions (leftY, rightY)
+
+Ball position and speed (ballX, ballY, ballSpeedX, ballSpeedY)
+
+Scores (leftScore, rightScore)
+
+Maximum score to win (maxScore)
+
+Winner text (winner)
+
+Player IPs (player1IP, player2IP)
+
+Player registration:
+The first two devices accessing /state.json are assigned as Player 1 and Player 2, based on their IP addresses.
+The ESP prints these IPs in the Serial Monitor.
+
+Game logic:
+
+Ball movement with bounce on top/bottom walls.
+
+Paddle collision detection.
+
+Scoring and buzzer sound on goal.
+
+Dynamic winner detection and reset.
+
+AJAX polling:
+Clients fetch /state.json every 50ms (~20 FPS) to synchronize the game state.
+
+2. index.html
+
+HTML page with:
+
+<canvas> for the game.
+
+Menu for selecting points to win.
+
+“Start Game” button.
+
+Pop-up for winner display.
+
+Paragraphs to show your IP and other player IP.
+
+3. style.css
+
+Styles the canvas, menu, and pop-up window.
+
+Applies dark background, borders, and responsive display.
+
+Hidden pop-up class (.hidden) toggled when game ends.
+
+4. script.js
+
+Handles drawing the game in <canvas>: paddles, ball, scores, dynamic colors.
+
+Handles keyboard input:
+
+Player 1 → W/S
+
+Player 2 → Arrow Up / Arrow Down
+
+Sends input to ESP via /move?key=.
+
+Polls /state.json for updated game state and updates canvas.
+
+Updates player IPs and other player IPs on the page.
+
+Shows winner pop-up when game ends.
+
+🔹 Multiplayer Flow
+
+Both players connect to the ESP8266 IP via a web browser.
+
+ESP registers the first two IPs as Player 1 and Player 2.
+
+Players choose points to win and click “Start Game”.
+
+Players control their paddles via keyboard.
+
+AJAX polling keeps the game synchronized across both devices.
+
+When a player reaches the max score, a pop-up announces the winner.
+
+Players can reset the game using the popup button or reload.
+
+🔹 Notes and Limitations
+
+Only two players supported. Additional connections are ignored.
+
+Polling via AJAX may introduce slight latency; not as fast as WebSocket.
+
+Works only on the same local network.
+
+Ensure LittleFS upload is done before running the sketch.
+
+🔹 Setup Instructions
+
+Install ESP8266 board in Arduino IDE.
+
+Install LittleFS plugin and upload data/ folder contents to ESP.
+
+Update ssid and password in the sketch.
+
+Compile and upload the sketch.
+
+Open Serial Monitor (115200 baud) to see:
+
+ESP8266 IP: 192.168.1.X
+
+
+Connect from browsers at http://ESP_IP/.
+
+Select points to win → click Start → play Pong!
+
+🔹 Serial Monitor Output
+
+Example:
+
+Connecting...
+ESP8266 IP: 192.168.1.50
+Player 1 connected: 192.168.1.101
+Player 2 connected: 192.168.1.102
+
+🔹 Future Improvements
+
+Implement smoother WebSocket-based communication for real-time gameplay.
+
+Add sound effects for paddle hits or scoring.
+
+Add single-player mode.
+
+Support more than 2 players with multiple paddles.
+
+Optimize frame rate and colors for better graphics.
